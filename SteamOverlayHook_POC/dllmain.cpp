@@ -11,10 +11,11 @@
 #include "Utils.h"
 #include "Addr.h"
 #include "Detours/detours.h"
+#include <string>
 #pragma comment(lib, "detours.lib")
 #pragma endregion headers
 
-#pragma region defs
+
 ID3D11RenderTargetView* rendertarget;
 ID3D11DeviceContext* context;
 ID3D11Device* device;
@@ -22,9 +23,7 @@ HRESULT(*present_original)(IDXGISwapChain* swapchain, UINT sync, UINT flags) = n
 typedef double(*LogFn)(int a1, const char* text, __int64 a3, int a4, __int64 a5);
 int X, Y;
 HWND hwnd;
-#pragma endregion defs
 
-#pragma region hooked
 HRESULT present_hooked(IDXGISwapChain* swapchain, UINT sync, UINT flags)
 {
     if (!device)
@@ -88,13 +87,23 @@ HRESULT present_hooked(IDXGISwapChain* swapchain, UINT sync, UINT flags)
 
     return present_original(swapchain, sync, flags);
 }
-__int64 hookadr = Addr::base_address + 0x7DEEC0;
+// bool __fastcall sub_14092A340(__int64 a1, unsigned __int16 TemplateId, _QWORD *a3)
+// 
 // 7DEEC0
+typedef bool(*TemplateHook)(__int64 a1, unsigned __int16 TemplateId, __int64* result);
+__int64 hookadr = Addr::base_address + 0x7DEEC0;
+__int64 templhookadr = Addr::base_address + 0x92A340;
+bool temphookedFn(__int64 a1, unsigned __int16 TemplateId, __int64* result)
+{
+    TemplateHook origFn = (TemplateHook)(templhookadr);
+    std::cout << std::hex <<a1  <<" a1 [Executed TamplateId] " << TemplateId << std::endl;
+
+    return origFn(a1, TemplateId, result);
+}
 double hookedFn(int a1, const char* text, __int64 a3, int a4, __int64 a5)
 {
     LogFn origFn = (LogFn)(hookadr);
-    std::cout << text << std::hex << a3 << std::endl;
-
+        origFn(1, "NIGERS", a3, a4, a5);    
     return origFn(a1, text, a3, a4, a5);
 }
 void initmyhook()
@@ -103,11 +112,12 @@ void initmyhook()
     DetourTransactionBegin();
     DetourUpdateThread(GetCurrentThread());
     DetourAttach(&(PVOID&)hookadr, &hookedFn);
+    DetourAttach(&(PVOID&)templhookadr, &temphookedFn);
     DetourTransactionCommit();
 }
-#pragma endregion hooked
-//uintptr_t LogFunctionAddres = Utils::sigscan(0, "s");
 
+//uintptr_t LogFunctionAddres = Utils::sigscan(0, "s");
+//B27850
 
 void hook(__int64 addr, __int64 func, __int64* orig)
 {
