@@ -125,7 +125,7 @@ HRESULT present_hooked(IDXGISwapChain* swapchain, UINT sync, UINT flags)
     }
     if (GetAsyncKeyState(VK_NEXT)&1)
     {
-        if (fov > 1)
+        if (fov > 5)
         {
             fov -= 5;
         }
