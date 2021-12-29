@@ -10,8 +10,13 @@
 #include "Engine.h"
 #include "Utils.h"
 #include "Addr.h"
-#include "Detours/detours.h"
 #include <string>
+#include "Detours/detours.h"
+#include "GameClass.h"
+#include <sstream>
+#include <fstream>
+
+#include <direct.h>
 #pragma comment(lib, "detours.lib")
 #pragma endregion headers
 
@@ -23,7 +28,8 @@ HRESULT(*present_original)(IDXGISwapChain* swapchain, UINT sync, UINT flags) = n
 typedef double(*LogFn)(int a1, const char* text, __int64 a3, int a4, __int64 a5);
 int X, Y;
 HWND hwnd;
-
+ActorArray SCAM;
+int acount;
 HRESULT present_hooked(IDXGISwapChain* swapchain, UINT sync, UINT flags)
 {
     if (!device)
@@ -71,13 +77,26 @@ HRESULT present_hooked(IDXGISwapChain* swapchain, UINT sync, UINT flags)
     ImGui::SetWindowPos(ImVec2(0, 0), ImGuiCond_Always);
     ImGui::SetWindowSize(ImVec2(IO.DisplaySize.x, IO.DisplaySize.y), ImGuiCond_Always);
     ImGuiWindow& window = *ImGui::GetCurrentWindow();
-
-
-
-    window.DrawList->AddCircle({ 123,123 }, 30, ImColor{ 255,2,2,255 }, 12, 3);
-
+    if (GetAsyncKeyState(VK_INSERT))
+    {
+        acount = 0;
+        for (size_t i = 0; i <= acount; i++)
+        {
+            SCAM.pActor[i] = nullptr;
+        }
+    }
     Vector3 scrPos;
     Engine::Worldtoscreen(&scrPos, { 500,18,400 });
+    for (size_t i = 0; i <= acount; i++)
+    {
+        if (SCAM.pActor[i] != nullptr)
+        {
+            if (Engine::Worldtoscreen(&scrPos, SCAM.pActor[i]->Position))
+            {
+               window.DrawList->AddText(ImVec2(scrPos.x, scrPos.y), ImColor{ 255,1,1,255 }, "NEGR");
+            }
+        }
+    }
     window.DrawList->AddCircle(ImVec2{ scrPos.x,scrPos.y }, 10, ImColor{ 255,0,0,255 }, 12, 2);
 
     window.DrawList->PushClipRectFullScreen();
@@ -88,27 +107,50 @@ HRESULT present_hooked(IDXGISwapChain* swapchain, UINT sync, UINT flags)
     return present_original(swapchain, sync, flags);
 }
 // bool __fastcall sub_14092A340(__int64 a1, unsigned __int16 TemplateId, _QWORD *a3)
-// 
-// 7DEEC0
+//  int __fastcall sub_1418A12F0(__int64 a1, float a2, float xmm2_4_0, double a4, __int64 a5)
+// 41 57 41 56 41 55 41 54 56 57 55 53 48 81 EC A8 0C 00 00 44 0F 29 BC 24 90 0C 00 00 66 44 0F 29 B4 24 80 0C 00 00
 typedef bool(*TemplateHook)(__int64 a1, unsigned __int16 TemplateId, __int64* result);
-__int64 hookadr = Addr::base_address + 0x7DEEC0;
-__int64 templhookadr = Addr::base_address + 0x92A340;
-bool temphookedFn(__int64 a1, unsigned __int16 TemplateId, __int64* result)
+typedef int(*ActorUpdateHook)(__int64 a1, float a2, float xmm2_4_0, double a4, __int64 a5);
+__int64 templhookadr = Utils::sigscan(0, "41 57 41 56 41 55 41 54 56 57 55 53 48 81 EC A8 0C 00 00 44 0F 29 BC 24 90 0C 00 00 66 44 0F 29 B4 24 80 0C 00 00");
+__int64 hookadr= Utils::sigscan(0,"41 57 41 56 41 55 41 54 56 57 55 53 48 83 EC 48 80 3D ? ? ? ? ? 0F 85 ? ? ? ? 44 89 CB 4D");
+bool temphookedFn(__int64 a1, float a2, float xmm2_4_0, double a4, __int64 a5)
 {
-    TemplateHook origFn = (TemplateHook)(templhookadr);
-    std::cout << std::hex <<a1  <<" a1 [Executed TamplateId] " << TemplateId << std::endl;
+    ActorUpdateHook origFn = (ActorUpdateHook)(templhookadr);
 
-    return origFn(a1, TemplateId, result);
+    __int64 v586 = *(__int64*)(a5);
+    Actor* pActor = (Actor*) v586;
+    for (size_t i = 0; i <= 200; i++)
+    {
+        if (SCAM.pActor[i] == pActor)
+            break;
+        if (i == acount)
+        {
+            SCAM.pActor[acount] = pActor;
+            acount++;
+            break;
+        }
+        if (acount == 200)
+        {
+            acount = 0;
+            break;
+        }
+    }
+
+    return origFn(a1, a2, xmm2_4_0, a4, a5);
 }
 double hookedFn(int a1, const char* text, __int64 a3, int a4, __int64 a5)
 {
     LogFn origFn = (LogFn)(hookadr);
-        origFn(1, "NIGERS", a3, a4, a5);    
-    return origFn(a1, text, a3, a4, a5);
+    return origFn(1, "NIGERS", a3, a4, a5);
 }
+
+
+
+
+
 void initmyhook()
 {
-
+   
     DetourTransactionBegin();
     DetourUpdateThread(GetCurrentThread());
     DetourAttach(&(PVOID&)hookadr, &hookedFn);
@@ -130,6 +172,8 @@ void hook(__int64 addr, __int64 func, __int64* orig)
 
 void init()
 {
+
+    initmyhook();
     if (!GetModuleHandleA("GameOverlayRenderer64.dll"))
     {
         exit(0);
@@ -138,10 +182,11 @@ void init()
     freopen("CONIN$", "r", stdin);
     freopen("CONOUT$", "w", stdout);
     freopen("CONOUT$", "w", stderr);
+
     uintptr_t Steam_DXGI_PresentScene = Utils::sigscan("GameOverlayRenderer64.dll", "48 89 6C 24 18 48 89 74 24 20 41 56 48 83 EC 20 41 8B E8");
     if (Steam_DXGI_PresentScene)
         hook(Steam_DXGI_PresentScene, (__int64)present_hooked, (__int64*)&present_original);
-    initmyhook();
+
 }
 
 BOOL APIENTRY DllMain( HMODULE hModule,
