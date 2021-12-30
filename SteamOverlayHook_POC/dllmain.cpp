@@ -48,7 +48,9 @@ HWND hwnd;
 ActorArray SCAM;
 int acount;
 float fov =60;
+bool infammot;
 Vector2 windowscenter;
+__int64 InfAmmoIstr = Utils::sigscan(0, "85 C0 0F 84  53 21 00 00 83 C0 FF 41");
 HRESULT present_hooked(IDXGISwapChain* swapchain, UINT sync, UINT flags)
 {
     if (!device)
@@ -93,6 +95,8 @@ HRESULT present_hooked(IDXGISwapChain* swapchain, UINT sync, UINT flags)
     ImGui::SetWindowPos(ImVec2(0, 0), ImGuiCond_Always);
     ImGui::SetWindowSize(ImVec2(IO.DisplaySize.x, IO.DisplaySize.y), ImGuiCond_Always);
     ImGuiWindow& window = *ImGui::GetCurrentWindow();
+
+    
     if (GetAsyncKeyState(VK_INSERT))
     {
         acount = 0;
@@ -145,6 +149,7 @@ typedef __int64(*oCamRotation)(__int64 a1, __int64 a2, Vector2* CamRotation, uns
 typedef bool(*TemplateHook)(__int64 a1, unsigned __int16 TemplateId, __int64* result);
 typedef int(*ActorUpdateHook)(__int64 a1, float a2, float xmm2_4_0, double a4, __int64 a5);
 typedef double(*LogFn)(int a1, const char* text, __int64 a3, int a4, __int64 a5);
+
 __int64 AimHookadr =Utils::GetAbsoluteAddress(Utils::sigscan(0, "E8 ? ? ? ? 48 C7 83 ? ? ? ? ? ? ? ? 66 C7 83"),1,5);
 __int64 Poshookadr = Utils::GetAbsoluteAddress(Utils::sigscan(0, "E8 ? ? ? ? 83 C7 01 39 7C 24 3C"), 1, 5);
 __int64 hookadr= Utils::sigscan(0,"41 57 41 56 41 55 41 54 56 57 55 53 48 83 EC 48 80 3D ? ? ? ? ? 0F 85 ? ? ? ? 44 89 CB 4D");
@@ -183,6 +188,7 @@ __int64 AimbotThread(__int64 a1, __int64 a2,  Vector2* CamRotation, unsigned __i
     
     return origFn(a1, a2, CamRotation, a4, a5, a6, a7, a8, a9, a10);
 }
+
 bool PosHooked(__int64 a1, float a2, float xmm2_4_0, double a4, __int64 a5)
 {
     ActorUpdateHook origFn = (ActorUpdateHook)(Poshookadr);
@@ -204,8 +210,9 @@ bool PosHooked(__int64 a1, float a2, float xmm2_4_0, double a4, __int64 a5)
             acount = 0;
             break;
         }
-    }
 
+    }
+ 
     return origFn(a1, a2, xmm2_4_0, a4, a5);
 }
 
@@ -219,7 +226,22 @@ double hookedLogs(int a1, const char* text, __int64 a3, int a4, __int64 a5)
 
 void initmyhook()
 {
-   
+
+
+    DWORD old;
+    BYTE* da = reinterpret_cast<BYTE*>(InfAmmoIstr);
+    VirtualProtect((LPVOID)InfAmmoIstr, 64, PAGE_EXECUTE_READWRITE, &old);
+
+        // 85 C0 0F 84  53 21 00 00 83 C0 FF
+        // 90 90 90 90 90 90 90 90 83 C0 01
+        for (size_t i = 0; i <= 8; i++)
+        {
+            *da = 0x90;
+            da = reinterpret_cast<BYTE*>(InfAmmoIstr + i);
+        }
+        da = reinterpret_cast<BYTE*>(InfAmmoIstr + 10);
+        *da = 0x01;
+        VirtualProtect((LPVOID)InfAmmoIstr, 64, old, &old);
     DetourTransactionBegin();
     DetourUpdateThread(GetCurrentThread());
     DetourAttach(&(PVOID&)hookadr, &hookedLogs);
