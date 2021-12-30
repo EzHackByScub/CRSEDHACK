@@ -19,7 +19,9 @@ __int8* AsmInject::AllocQuick(ULONG64 memSize)
 
 void AsmInject::WriteShell(AsmInfo* Info, void* ShellAdr, int shellSize)
 {
+	DWORD op;
 	__int8* Buffer = (__int8*)Info->BufferAddress;
+	VirtualProtect(Buffer, shellSize, PAGE_EXECUTE_READWRITE, &op);
 	void* BufferEnd = &Buffer[Info->CodeEnd];
 	memcpy(BufferEnd, ShellAdr, shellSize); //
 	Info->CodeEnd += shellSize;

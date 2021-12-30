@@ -132,7 +132,7 @@ HRESULT present_hooked(IDXGISwapChain* swapchain, UINT sync, UINT flags)
     {
         if (SCAM.pActor[i] != nullptr)
         {
-            Vector3 bodypos = { SCAM.pActor[i]->Position.x ,SCAM.pActor[i]->Position.y+1 ,SCAM.pActor[i]->Position.z };
+            Vector3 bodypos = { SCAM.pActor[i]->Position.x ,SCAM.pActor[i]->Position.y+1.2 ,SCAM.pActor[i]->Position.z };
             if (Engine::Worldtoscreen(&scrPos, bodypos))
             {
                window.DrawList->AddText(ImVec2(scrPos.x, scrPos.y), ImColor{ 255,1,1,255 }, "NEGR");
@@ -171,7 +171,8 @@ typedef bool(*TemplateHook)(__int64 a1, unsigned __int16 TemplateId, __int64* re
 typedef int(*ActorUpdateHook)(__int64 a1, float a2, float xmm2_4_0, double a4, __int64 a5);
 typedef double(*LogFn)(int a1, const char* text, __int64 a3, int a4, __int64 a5);
 __int64 InfAmmoIstr = Utils::sigscan(0, "85 C0 0F 84  53 21 00 00 83 C0 FF 41");
-__int64 SpeedHackInst = Utils::sigscan(0, "F3 0F 10 04 0F 48 8B 34 4E F3 0F 11 86 0C 04 00 00 83 C2 FF 48 83 C1 04 41 39 D2 75 DC 29 D0");
+// F3 0F 59 08 F3 0F 11 08 49 8B 41 08 85 C0 __int64 SpeedHackInst = Utils::sigscan(0, "F3 0F 10 04 0F 48 8B 34 4E F3 0F 11 86 0C 04 00 00 83 C2 FF 48 83 C1 04 41 39 D2 75 DC 29 D0");
+__int64 NoRecoiladr = Utils::sigscan(0, "C7 00 00 00 80 3F 48 8B 41 08 F3 0F 10 88 B8 03 00 00");
 __int64 AimHookadr =Utils::GetAbsoluteAddress(Utils::sigscan(0, "E8 ? ? ? ? 48 C7 83 ? ? ? ? ? ? ? ? 66 C7 83"),1,5);
 __int64 Poshookadr = Utils::GetAbsoluteAddress(Utils::sigscan(0, "E8 ? ? ? ? 83 C7 01 39 7C 24 3C"), 1, 5);
 __int64 hookadr= Utils::sigscan(0,"41 57 41 56 41 55 41 54 56 57 55 53 48 83 EC 48 80 3D ? ? ? ? ? 0F 85 ? ? ? ? 44 89 CB 4D");
@@ -185,7 +186,7 @@ __int64 AimbotThread(__int64 a1, __int64 a2,  Vector2* CamRotation, unsigned __i
             if (SCAM.pActor[i] != nullptr)
             {
                 Vector3 scrPos;
-                Vector3 bodypos = { SCAM.pActor[i]->Position.x ,SCAM.pActor[i]->Position.y + 1 ,SCAM.pActor[i]->Position.z };
+                Vector3 bodypos = { SCAM.pActor[i]->Position.x ,SCAM.pActor[i]->Position.y + 1.2 ,SCAM.pActor[i]->Position.z };
                 if (Engine::Worldtoscreen(&scrPos, bodypos))
                 {
            
@@ -248,6 +249,7 @@ double hookedLogs(int a1, const char* text, __int64 a3, int a4, __int64 a5)
 
 void initmyhook()
 {
+    //7FF6E5EA1D8E
     DWORD old;
     BYTE* da = reinterpret_cast<BYTE*>(InfAmmoIstr);
     VirtualProtect((LPVOID)InfAmmoIstr, 64, PAGE_EXECUTE_READWRITE, &old);
@@ -260,15 +262,12 @@ void initmyhook()
         }
         da = reinterpret_cast<BYTE*>(InfAmmoIstr + 10);
         *da = 0x01;
-        //AsmInfo Info;
-        //Info.BufferAddress = AsmInject::AllocQuick(4096);
-        //Info.Address = (void*)SpeedHackInst;
-        //Info.SaveOrig = true;
-        //Info.Stolen = 3;
-        //Info.CodeEnd = 0;
-        //uint8_t shell[] = { 0xC7, 0x07, 0x00, 0x00, 0xC0, 0x3F };
-        //AsmInject::WriteShell(&Info, shell, sizeof(shell));
-        //AsmInject::Setup(&Info);
+        AsmInfo Info;
+        Info.CodeEnd = 0;
+        Info.BufferAddress = (char*)NoRecoiladr;
+        uint8_t shell[] = { 0xC7, 0x00, 0x00, 0x00, 0x00, 0x00 };
+        AsmInject::WriteShell(&Info, shell, sizeof(shell));
+
     DetourTransactionBegin();
     DetourUpdateThread(GetCurrentThread());
     DetourAttach(&(PVOID&)hookadr, &hookedLogs);
