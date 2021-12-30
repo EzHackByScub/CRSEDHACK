@@ -260,15 +260,15 @@ void initmyhook()
         }
         da = reinterpret_cast<BYTE*>(InfAmmoIstr + 10);
         *da = 0x01;
-        AsmInfo Info;
-        Info.BufferAddress = AsmInject::AllocQuick(4096);
-        Info.Address = (void*)SpeedHackInst;
-        Info.SaveOrig = true;
-        Info.Stolen = 3;
-        Info.CodeEnd = 0;
-        uint8_t shell[] = { 0xC7, 0x07, 0x00 ,0x00 ,0x80 ,0x40 };
-        AsmInject::WriteShell(&Info, shell, sizeof(shell));
-        AsmInject::Setup(&Info);
+        //AsmInfo Info;
+        //Info.BufferAddress = AsmInject::AllocQuick(4096);
+        //Info.Address = (void*)SpeedHackInst;
+        //Info.SaveOrig = true;
+        //Info.Stolen = 3;
+        //Info.CodeEnd = 0;
+        //uint8_t shell[] = { 0xC7, 0x07, 0x00, 0x00, 0xC0, 0x3F };
+        //AsmInject::WriteShell(&Info, shell, sizeof(shell));
+        //AsmInject::Setup(&Info);
     DetourTransactionBegin();
     DetourUpdateThread(GetCurrentThread());
     DetourAttach(&(PVOID&)hookadr, &hookedLogs);
