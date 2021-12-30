@@ -1,8 +1,7 @@
 ﻿#define _CRT_SECURE_NO_WARNINGS
 
 
-#include <Windows.h>
-#include <iostream>
+#include "AsmInject.h"
 #include <D3DX11.h>
 #include "imgui/imgui.h"
 #include "imgui/imgui_impl_dx11.h"
@@ -41,7 +40,29 @@ namespace Fn {
         Vector2 angle = { angleX,angleY };
         return  angle;
     }
+    void patchBytes(uintptr_t address, BYTE array[])
+    {
 
+        DWORD OldProtection;
+        VirtualProtect((LPVOID)address, 64, 0x40, &OldProtection);
+        for (long i = 0; i < sizeof(array); i++)
+        {
+            BYTE* Patched = reinterpret_cast<BYTE*>(address + i);
+            *Patched = array[i];
+        }
+        VirtualProtect((LPVOID)address, 64, OldProtection, &OldProtection);
+    }
+    void nopBytes(uintptr_t address, int size)
+    {
+        DWORD OldProtection;
+        VirtualProtect((LPVOID)address, size + 10, PAGE_EXECUTE_READWRITE, &OldProtection);
+        for (long i = 0; i < size; i++)
+        {
+            BYTE* Patched = reinterpret_cast<BYTE*>(address + i);
+            *Patched = 0x90;
+        }
+        VirtualProtect((LPVOID)address, size + 10, OldProtection, &OldProtection);
+    }
 }
 int X, Y;
 HWND hwnd;
@@ -50,7 +71,7 @@ int acount;
 float fov =60;
 bool infammot;
 Vector2 windowscenter;
-__int64 InfAmmoIstr = Utils::sigscan(0, "85 C0 0F 84  53 21 00 00 83 C0 FF 41");
+
 HRESULT present_hooked(IDXGISwapChain* swapchain, UINT sync, UINT flags)
 {
     if (!device)
@@ -149,7 +170,8 @@ typedef __int64(*oCamRotation)(__int64 a1, __int64 a2, Vector2* CamRotation, uns
 typedef bool(*TemplateHook)(__int64 a1, unsigned __int16 TemplateId, __int64* result);
 typedef int(*ActorUpdateHook)(__int64 a1, float a2, float xmm2_4_0, double a4, __int64 a5);
 typedef double(*LogFn)(int a1, const char* text, __int64 a3, int a4, __int64 a5);
-
+__int64 InfAmmoIstr = Utils::sigscan(0, "85 C0 0F 84  53 21 00 00 83 C0 FF 41");
+__int64 SpeedHackInst = Utils::sigscan(0, "F3 0F 10 04 0F 48 8B 34 4E F3 0F 11 86 0C 04 00 00 83 C2 FF 48 83 C1 04 41 39 D2 75 DC 29 D0");
 __int64 AimHookadr =Utils::GetAbsoluteAddress(Utils::sigscan(0, "E8 ? ? ? ? 48 C7 83 ? ? ? ? ? ? ? ? 66 C7 83"),1,5);
 __int64 Poshookadr = Utils::GetAbsoluteAddress(Utils::sigscan(0, "E8 ? ? ? ? 83 C7 01 39 7C 24 3C"), 1, 5);
 __int64 hookadr= Utils::sigscan(0,"41 57 41 56 41 55 41 54 56 57 55 53 48 83 EC 48 80 3D ? ? ? ? ? 0F 85 ? ? ? ? 44 89 CB 4D");
@@ -226,12 +248,9 @@ double hookedLogs(int a1, const char* text, __int64 a3, int a4, __int64 a5)
 
 void initmyhook()
 {
-
-
     DWORD old;
     BYTE* da = reinterpret_cast<BYTE*>(InfAmmoIstr);
     VirtualProtect((LPVOID)InfAmmoIstr, 64, PAGE_EXECUTE_READWRITE, &old);
-
         // 85 C0 0F 84  53 21 00 00 83 C0 FF
         // 90 90 90 90 90 90 90 90 83 C0 01
         for (size_t i = 0; i <= 8; i++)
@@ -241,7 +260,15 @@ void initmyhook()
         }
         da = reinterpret_cast<BYTE*>(InfAmmoIstr + 10);
         *da = 0x01;
-        VirtualProtect((LPVOID)InfAmmoIstr, 64, old, &old);
+        AsmInfo Info;
+        Info.BufferAddress = AsmInject::AllocQuick(4096);
+        Info.Address = (void*)SpeedHackInst;
+        Info.SaveOrig = true;
+        Info.Stolen = 3;
+        Info.CodeEnd = 0;
+        uint8_t shell[] = { 0xC7, 0x07, 0x00 ,0x00 ,0x80 ,0x40 };
+        AsmInject::WriteShell(&Info, shell, sizeof(shell));
+        AsmInject::Setup(&Info);
     DetourTransactionBegin();
     DetourUpdateThread(GetCurrentThread());
     DetourAttach(&(PVOID&)hookadr, &hookedLogs);

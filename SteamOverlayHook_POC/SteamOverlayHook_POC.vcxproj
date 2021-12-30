@@ -157,6 +157,7 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="AsmInject.cpp" />
     <ClCompile Include="dllmain.cpp" />
     <ClCompile Include="Engine.cpp" />
     <ClCompile Include="imgui\imgui.cpp" />
@@ -166,6 +167,7 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Addr.h" />
+    <ClInclude Include="AsmInject.h" />
     <ClInclude Include="Detours\detours.h" />
     <ClInclude Include="Engine.h" />
     <ClInclude Include="GameClass.h" />
