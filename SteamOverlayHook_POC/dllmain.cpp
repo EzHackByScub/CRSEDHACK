@@ -170,9 +170,10 @@ typedef __int64(*oCamRotation)(__int64 a1, __int64 a2, Vector2* CamRotation, uns
 typedef bool(*TemplateHook)(__int64 a1, unsigned __int16 TemplateId, __int64* result);
 typedef int(*ActorUpdateHook)(__int64 a1, float a2, float xmm2_4_0, double a4, __int64 a5);
 typedef double(*LogFn)(int a1, const char* text, __int64 a3, int a4, __int64 a5);
-__int64 InfAmmoIstr = Utils::sigscan(0, "85 C0 0F 84  53 21 00 00 83 C0 FF 41");
+__int64 InfAmmoIstr = Utils::sigscan(0, "85 C0 0F 84 ? ? ? ? 83 C0 ? 41 89 ? 48 8B");
 // F3 0F 59 08 F3 0F 11 08 49 8B 41 08 85 C0 __int64 SpeedHackInst = Utils::sigscan(0, "F3 0F 10 04 0F 48 8B 34 4E F3 0F 11 86 0C 04 00 00 83 C2 FF 48 83 C1 04 41 39 D2 75 DC 29 D0");
-__int64 NoRecoiladr = Utils::sigscan(0, "C7 00 00 00 80 3F 48 8B 41 08 F3 0F 10 88 B8 03 00 00");
+// C7 00 00 00 80 3F 48 8B ? ? F3 0F
+__int64 NoRecoiladr = Utils::sigscan(0, "C7 00 00 00 80 3F 48 8B ? ? F3 0F");
 __int64 AimHookadr =Utils::GetAbsoluteAddress(Utils::sigscan(0, "E8 ? ? ? ? 48 C7 83 ? ? ? ? ? ? ? ? 66 C7 83"),1,5);
 __int64 Poshookadr = Utils::GetAbsoluteAddress(Utils::sigscan(0, "E8 ? ? ? ? 83 C7 01 39 7C 24 3C"), 1, 5);
 __int64 hookadr= Utils::sigscan(0,"41 57 41 56 41 55 41 54 56 57 55 53 48 83 EC 48 80 3D ? ? ? ? ? 0F 85 ? ? ? ? 44 89 CB 4D");
