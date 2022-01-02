@@ -13,6 +13,12 @@ public:
 	char fuckthisengine[0x24];
 	Vector3 Position;
 };
+class WeaponCros
+{
+public:
+	char fuckthisengine[0x354];
+	Vector2 AimAngles;
+};
 class ActorArray
 {
 public:

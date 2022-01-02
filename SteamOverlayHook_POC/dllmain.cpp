@@ -1,7 +1,7 @@
 ﻿#define _CRT_SECURE_NO_WARNINGS
 
-
 #include "AsmInject.h"
+#include "winbase.h"
 #include <D3DX11.h>
 #include "imgui/imgui.h"
 #include "imgui/imgui_impl_dx11.h"
@@ -70,7 +70,7 @@ ActorArray SCAM;
 int acount;
 float fov =60;
 bool infammot;
-Vector2 windowscenter;
+Vector2 scrCenter;
 
 HRESULT present_hooked(IDXGISwapChain* swapchain, UINT sync, UINT flags)
 {
@@ -92,7 +92,7 @@ HRESULT present_hooked(IDXGISwapChain* swapchain, UINT sync, UINT flags)
 
         X = backBufferDesc.Width;
         Y = backBufferDesc.Height;
-        windowscenter = { (float)X / 2,(float)Y / 2 };
+        scrCenter = { (float)X / 2,(float)Y / 2 };
         backBuffer->Release();
 
         if (!hwnd)
@@ -121,7 +121,7 @@ HRESULT present_hooked(IDXGISwapChain* swapchain, UINT sync, UINT flags)
     if (GetAsyncKeyState(VK_INSERT))
     {
         acount = 0;
-        for (size_t i = 0; i <= acount; i++)
+        for (size_t i = 0; i <= 200; i++)
         {
             SCAM.pActor[i] = nullptr;
         }
@@ -132,6 +132,8 @@ HRESULT present_hooked(IDXGISwapChain* swapchain, UINT sync, UINT flags)
     {
         if (SCAM.pActor[i] != nullptr)
         {
+            if (IsBadReadPtr(SCAM.pActor[i], 0))
+                continue;
             Vector3 bodypos = { SCAM.pActor[i]->Position.x ,SCAM.pActor[i]->Position.y+1.2 ,SCAM.pActor[i]->Position.z };
             if (Engine::Worldtoscreen(&scrPos, bodypos))
             {
@@ -139,7 +141,7 @@ HRESULT present_hooked(IDXGISwapChain* swapchain, UINT sync, UINT flags)
             }
         }
     }
-    window.DrawList->AddCircle(ImVec2{ windowscenter.x,windowscenter.y }, fov, ImColor{ 255,0,0,255 }, 80, 1);
+    window.DrawList->AddCircle(ImVec2{ scrCenter.x,scrCenter.y }, fov, ImColor{ 255,0,0,255 }, 80, 1);
     if (GetAsyncKeyState(VK_PRIOR) & 1)
     {
 
@@ -168,15 +170,61 @@ HRESULT present_hooked(IDXGISwapChain* swapchain, UINT sync, UINT flags)
 //__int64 __fastcall CamRotation(__int64 a1, __int64 a2, unsigned __int32 *CamRotationY, unsigned __int64 a4, __int64 a5, float a6, double a7, double a8, unsigned int a9, unsigned int a10)
 typedef __int64(*oCamRotation)(__int64 a1, __int64 a2, Vector2* CamRotation, unsigned __int64 a4, __int64 a5, float a6, double a7, double a8, unsigned int a9, unsigned int a10);
 typedef bool(*TemplateHook)(__int64 a1, unsigned __int16 TemplateId, __int64* result);
+// __int64 __fastcall sub_140DBC9E0(__int64 a1, __int64 a2, double a3)
+typedef __int64(*SilentAimHook)(WeaponCros* a1, __int64 a2, double a3);
 typedef int(*ActorUpdateHook)(__int64 a1, float a2, float xmm2_4_0, double a4, __int64 a5);
 typedef double(*LogFn)(int a1, const char* text, __int64 a3, int a4, __int64 a5);
 __int64 InfAmmoIstr = Utils::sigscan(0, "85 C0 0F 84 ? ? ? ? 83 C0 ? 41 89 ? 48 8B");
+__int64 NoSpredIstr = Utils::sigscan(0, "F3 0F 11 76 10 0F 28 74 24 50 0F 28 7C 24 60");
+__int64 NoShakeXinstr = Utils::sigscan(0, "F3 0F 11 86 54 03 00 00 0F B6 FA 83 C2 01 F3 44 0F 5C C3 0F 57 DB F3 41 0F 5A D8");
+__int64 NoShakeYinstr = Utils::sigscan(0, " F3 0F 11 9E 58 03 00 00 F3 0F 10 B6 C4 03 00 00 F3 0F 10 BE C8");
+//
 // F3 0F 59 08 F3 0F 11 08 49 8B 41 08 85 C0 __int64 SpeedHackInst = Utils::sigscan(0, "F3 0F 10 04 0F 48 8B 34 4E F3 0F 11 86 0C 04 00 00 83 C2 FF 48 83 C1 04 41 39 D2 75 DC 29 D0");
-// C7 00 00 00 80 3F 48 8B ? ? F3 0F
+
 __int64 NoRecoiladr = Utils::sigscan(0, "C7 00 00 00 80 3F 48 8B ? ? F3 0F");
+//
+__int64 SliletAimHookadr = Utils::GetAbsoluteAddress(Utils::sigscan(0, "E8 ? ? ? ? F3 41 0F 10 94 24 ? ? ? ? 49 8B 45 00 4C 89 E9 89 DA"), 1, 5);
 __int64 AimHookadr =Utils::GetAbsoluteAddress(Utils::sigscan(0, "E8 ? ? ? ? 48 C7 83 ? ? ? ? ? ? ? ? 66 C7 83"),1,5);
 __int64 Poshookadr = Utils::GetAbsoluteAddress(Utils::sigscan(0, "E8 ? ? ? ? 83 C7 01 39 7C 24 3C"), 1, 5);
 __int64 hookadr= Utils::sigscan(0,"41 57 41 56 41 55 41 54 56 57 55 53 48 83 EC 48 80 3D ? ? ? ? ? 0F 85 ? ? ? ? 44 89 CB 4D");
+
+__int64  SilientHooked(WeaponCros* a1, __int64 a2, double a3)
+{
+    SilentAimHook origFn = (SilentAimHook)(SliletAimHookadr);
+    __int64 result = origFn(a1, a2, a3);
+    if (GetAsyncKeyState(VK_MENU))
+    {
+        for (size_t i = 0; i <= acount; i++)
+        {
+            if (SCAM.pActor[i] != nullptr)
+            {
+                Vector3 scrPos;
+                if (IsBadReadPtr(SCAM.pActor[i], 0))
+                    continue;
+
+                Vector3 bodypos = { SCAM.pActor[i]->Position.x ,SCAM.pActor[i]->Position.y + 1.2 ,SCAM.pActor[i]->Position.z };
+                if (Engine::Worldtoscreen(&scrPos, bodypos))
+                {
+                    float dx = scrPos.x - scrCenter.x;
+                    float dy = scrPos.y - scrCenter.y;
+                    float crosshair_dist = sqrtf((dx * dx) + (dy * dy));
+                    if (crosshair_dist <= FLT_MAX)
+                    {
+                        if (crosshair_dist < fov) 
+                        {
+                            a1->AimAngles.x =dx/ scrCenter.x;
+                            a1->AimAngles.y = -(dy /  (1.9*scrCenter.y));
+                            return result;
+                        }
+                    }
+                }
+            }
+        }
+    }
+    a1->AimAngles.x = 0.f;
+    a1->AimAngles.y = 0.f;
+    return result;
+}
 __int64 AimbotThread(__int64 a1, __int64 a2,  Vector2* CamRotation, unsigned __int64 a4, __int64 a5, float a6, double a7, double a8, unsigned int a9, unsigned int a10)
 {
     oCamRotation origFn = (oCamRotation)(AimHookadr);
@@ -187,12 +235,15 @@ __int64 AimbotThread(__int64 a1, __int64 a2,  Vector2* CamRotation, unsigned __i
             if (SCAM.pActor[i] != nullptr)
             {
                 Vector3 scrPos;
+                if (IsBadReadPtr(SCAM.pActor[i], 0))
+                    continue;
+
                 Vector3 bodypos = { SCAM.pActor[i]->Position.x ,SCAM.pActor[i]->Position.y + 1.2 ,SCAM.pActor[i]->Position.z };
                 if (Engine::Worldtoscreen(&scrPos, bodypos))
                 {
            
-                    float x = scrPos.x - windowscenter.x;
-                    float y = scrPos.y - windowscenter.y;
+                    float x = scrPos.x - scrCenter.x;
+                    float y = scrPos.y - scrCenter.y;
                     float crosshair_dist = sqrtf((x * x) + (y * y));
                     if (crosshair_dist <= FLT_MAX)
                     {
@@ -263,17 +314,26 @@ void initmyhook()
         }
         da = reinterpret_cast<BYTE*>(InfAmmoIstr + 10);
         *da = 0x01;
+  
         AsmInfo Info;
         Info.CodeEnd = 0;
         Info.BufferAddress = (char*)NoRecoiladr;
         uint8_t shell[] = { 0xC7, 0x00, 0x00, 0x00, 0x00, 0x00 };
         AsmInject::WriteShell(&Info, shell, sizeof(shell));
+        ///
+        Fn::nopBytes(NoSpredIstr, 5);
+        Fn::nopBytes(NoShakeXinstr, 8);
+        Fn::nopBytes(NoShakeYinstr, 8);
+        AllocConsole();
 
+        freopen("CONIN$", "r", stdin);
+        freopen("CONOUT$", "w", stdout);
+        freopen("CONOUT$", "w", stderr);
     DetourTransactionBegin();
     DetourUpdateThread(GetCurrentThread());
     DetourAttach(&(PVOID&)hookadr, &hookedLogs);
-    DetourAttach(&(PVOID&)AimHookadr, &AimbotThread);
     DetourAttach(&(PVOID&)Poshookadr, &PosHooked);
+    DetourAttach(&(PVOID&)SliletAimHookadr, &SilientHooked);
     DetourTransactionCommit();
 }
 
@@ -292,10 +352,10 @@ void hook(__int64 addr, __int64 func, __int64* orig)
 void init()
 {
 
-    initmyhook();
+ initmyhook();
     if (!GetModuleHandleA("GameOverlayRenderer64.dll"))
     {
-        exit(0);
+     exit(0);
     }
 
 
