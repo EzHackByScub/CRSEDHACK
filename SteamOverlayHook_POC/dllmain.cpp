@@ -1,7 +1,7 @@
 ﻿#define _CRT_SECURE_NO_WARNINGS
 
 #include "AsmInject.h"
-#include "winbase.h"
+
 #include <D3DX11.h>
 #include "imgui/imgui.h"
 #include "imgui/imgui_impl_dx11.h"
@@ -199,8 +199,7 @@ __int64  SilientHooked(WeaponCros* a1, __int64 a2, double a3)
             if (SCAM.pActor[i] != nullptr)
             {
                 Vector3 scrPos;
-                if (IsBadReadPtr(SCAM.pActor[i], 0))
-                    continue;
+             
 
                 Vector3 bodypos = { SCAM.pActor[i]->Position.x ,SCAM.pActor[i]->Position.y + 1.2 ,SCAM.pActor[i]->Position.z };
                 if (Engine::Worldtoscreen(&scrPos, bodypos))
@@ -213,7 +212,7 @@ __int64  SilientHooked(WeaponCros* a1, __int64 a2, double a3)
                         if (crosshair_dist < fov) 
                         {
                             a1->AimAngles.x =dx/ scrCenter.x;
-                            a1->AimAngles.y = -(dy /  (1.9*scrCenter.y));
+                            a1->AimAngles.y = -(dy /  (1.85f*scrCenter.y));
                             return result;
                         }
                     }
@@ -235,8 +234,7 @@ __int64 AimbotThread(__int64 a1, __int64 a2,  Vector2* CamRotation, unsigned __i
             if (SCAM.pActor[i] != nullptr)
             {
                 Vector3 scrPos;
-                if (IsBadReadPtr(SCAM.pActor[i], 0))
-                    continue;
+      
 
                 Vector3 bodypos = { SCAM.pActor[i]->Position.x ,SCAM.pActor[i]->Position.y + 1.2 ,SCAM.pActor[i]->Position.z };
                 if (Engine::Worldtoscreen(&scrPos, bodypos))
