@@ -324,11 +324,7 @@ void initmyhook()
         Fn::nopBytes(NoSpredIstr, 5);
         Fn::nopBytes(NoShakeXinstr, 8);
         Fn::nopBytes(NoShakeYinstr, 8);
-        AllocConsole();
 
-        freopen("CONIN$", "r", stdin);
-        freopen("CONOUT$", "w", stdout);
-        freopen("CONOUT$", "w", stderr);
     DetourTransactionBegin();
     DetourUpdateThread(GetCurrentThread());
     DetourAttach(&(PVOID&)hookadr, &hookedLogs);
