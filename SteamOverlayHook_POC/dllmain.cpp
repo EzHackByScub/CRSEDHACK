@@ -137,7 +137,7 @@ HRESULT present_hooked(IDXGISwapChain* swapchain, UINT sync, UINT flags)
             Vector3 bodypos = { SCAM.pActor[i]->Position.x ,SCAM.pActor[i]->Position.y+1.2 ,SCAM.pActor[i]->Position.z };
             if (Engine::Worldtoscreen(&scrPos, bodypos))
             {
-               window.DrawList->AddText(ImVec2(scrPos.x, scrPos.y), ImColor{ 255,1,1,255 }, "NEGR");
+               window.DrawList->AddText(ImVec2(scrPos.x, scrPos.y), ImColor{ 255,1,1,255 }, "ZXC");
             }
         }
     }
@@ -171,9 +171,10 @@ HRESULT present_hooked(IDXGISwapChain* swapchain, UINT sync, UINT flags)
 typedef __int64(*oCamRotation)(__int64 a1, __int64 a2, Vector2* CamRotation, unsigned __int64 a4, __int64 a5, float a6, double a7, double a8, unsigned int a9, unsigned int a10);
 typedef bool(*TemplateHook)(__int64 a1, unsigned __int16 TemplateId, __int64* result);
 // __int64 __fastcall sub_140DBC9E0(__int64 a1, __int64 a2, double a3)
-typedef __int64(*SilentAimHook)(WeaponCros* a1, __int64 a2, double a3);
+
 typedef int(*ActorUpdateHook)(__int64 a1, float a2, float xmm2_4_0, double a4, __int64 a5);
 typedef double(*LogFn)(int a1, const char* text, __int64 a3, int a4, __int64 a5);
+__int64 LaunchProjectileAdr = Utils::sigscan(0, "41 ? 41 ? 41 ? 41 ? 56 57 55 53 48 81 EC ? ? ? ? 44 0F ? ? ? ? ? ? ? 44 0F ? ? ? ? ? ? ? 44 0F ? ? ? ? ? ? ? 44 0F ? ? ? ? ? ? ? 44 0F ? ? ? ? ? ? ? 44 0F ? ? ? ? ? ? ? 44 0F ? ? ? ? ? ? ? 44 0F ? ? ? ? ? ? ? 0F 29 ? ? ? ? ? ? 0F 29 ? ? ? ? ? ? 48 89 ? ? ? ? ? ? 0F B7 ? ? 8B 42 ? 89 84 ? ? ? ? ? 39 E8");
 __int64 InfAmmoIstr = Utils::sigscan(0, "85 C0 0F 84 ? ? ? ? 83 C0 ? 41 89 ? 48 8B");
 __int64 NoSpredIstr = Utils::sigscan(0, "F3 0F 11 76 10 0F 28 74 24 50 0F 28 7C 24 60");
 __int64 NoShakeXinstr = Utils::sigscan(0, "F3 0F 11 86 54 03 00 00 0F B6 FA 83 C2 01 F3 44 0F 5C C3 0F 57 DB F3 41 0F 5A D8");
@@ -188,6 +189,7 @@ __int64 AimHookadr =Utils::GetAbsoluteAddress(Utils::sigscan(0, "E8 ? ? ? ? 48 C
 __int64 Poshookadr = Utils::GetAbsoluteAddress(Utils::sigscan(0, "E8 ? ? ? ? 83 C7 01 39 7C 24 3C"), 1, 5);
 __int64 hookadr= Utils::sigscan(0,"41 57 41 56 41 55 41 54 56 57 55 53 48 83 EC 48 80 3D ? ? ? ? ? 0F 85 ? ? ? ? 44 89 CB 4D");
 
+typedef __int64(*SilentAimHook)(WeaponCros* a1, __int64 a2, double a3);
 __int64  SilientHooked(WeaponCros* a1, __int64 a2, double a3)
 {
     SilentAimHook origFn = (SilentAimHook)(SliletAimHookadr);
@@ -294,6 +296,22 @@ double hookedLogs(int a1, const char* text, __int64 a3, int a4, __int64 a5)
     LogFn origFn = (LogFn)(hookadr);
     return origFn(1, "Japrajah#5252", a3, a4, a5);
 }
+//void __fastcall launch_projectile_es(__int64 a1, __int64 a2, double _XMM2_8, double _XMM3_8)
+typedef void(*oProjectile)(__int64 a1, __int64 a2, double _XMM2_8, double _XMM3_8);
+void HookedProjectile(__int64 a1, __int64 a2, double XMM2_8, double XMM3_8)
+{
+    oProjectile origFn = (oProjectile)(LaunchProjectileAdr);
+    origFn(a1, a2, XMM2_8, XMM3_8);
+    origFn(a1, a2, XMM2_8, XMM3_8);
+    origFn(a1, a2, XMM2_8, XMM3_8);
+    origFn(a1, a2, XMM2_8, XMM3_8);
+    origFn(a1, a2, XMM2_8, XMM3_8);
+    origFn(a1, a2, XMM2_8, XMM3_8);
+    origFn(a1, a2, XMM2_8, XMM3_8);
+    origFn(a1, a2, XMM2_8, XMM3_8);
+    origFn(a1, a2, XMM2_8, XMM3_8);
+    return origFn(a1,a2, XMM2_8, XMM3_8);
+}
 
 
 
@@ -328,6 +346,8 @@ void initmyhook()
     DetourAttach(&(PVOID&)hookadr, &hookedLogs);
     DetourAttach(&(PVOID&)Poshookadr, &PosHooked);
     DetourAttach(&(PVOID&)SliletAimHookadr, &SilientHooked);
+    DetourAttach(&(PVOID&)LaunchProjectileAdr, &HookedProjectile);
+   
     DetourTransactionCommit();
 }
 
