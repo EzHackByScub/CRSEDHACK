@@ -21,12 +21,11 @@ public:
     static void jeShort(AsmInfo* Info, __int8 distance);
     static void jneShort(AsmInfo* Info, __int8 distance);
     static void WriteShell(AsmInfo* Info, void* ShellAdr, int shellSize);
-    static __int8* AllocQuick(ULONG64 memSize);
+    static __int8* Alloc(ULONG64 memSize);
 };
 
-static class REGISTER
+namespace REGISTER
 {
-public:
     enum REGS {
         RAX = 0,
         RBX = 1,

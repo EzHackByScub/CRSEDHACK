@@ -4,7 +4,7 @@
 class Engine
 {
 public:
-	static bool Worldtoscreen(Vector3* wtsvec, Vector3 position);
+	static bool Worldtoscreen(Vector3* wtsvec, Vector3 position, bool callfromrender);
 	static inline Camera* camera;
 };
 

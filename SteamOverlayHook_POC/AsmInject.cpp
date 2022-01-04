@@ -1,4 +1,5 @@
 #include "AsmInject.h"
+// best site https://defuse.ca/online-x86-assembler.htm
 
 void  AsmInject::CreateAbsJmp(void* adrInMemory, void* addrTo, int stolen)
 {
@@ -10,7 +11,8 @@ void  AsmInject::CreateAbsJmp(void* adrInMemory, void* addrTo, int stolen)
 	memcpy(adrInMemory, absJmp, sizeof(absJmp));
 	VirtualProtect(adrInMemory, sizeof(absJmp) + stolen, op, &op);
 }
-__int8* AsmInject::AllocQuick(ULONG64 memSize)
+
+__int8* AsmInject::Alloc(ULONG64 memSize)
 {
 	if (memSize)
 		return (__int8*)VirtualAlloc(0, memSize, MEM_COMMIT, PAGE_EXECUTE_READWRITE);
@@ -21,9 +23,10 @@ void AsmInject::WriteShell(AsmInfo* Info, void* ShellAdr, int shellSize)
 {
 	DWORD op;
 	__int8* Buffer = (__int8*)Info->BufferAddress;
-	VirtualProtect(Buffer, shellSize, PAGE_EXECUTE_READWRITE, &op);
+	VirtualProtect(Buffer, shellSize, PAGE_EXECUTE_READWRITE, &op); 
 	void* BufferEnd = &Buffer[Info->CodeEnd];
 	memcpy(BufferEnd, ShellAdr, shellSize); //
+	VirtualProtect(Buffer, shellSize, op, &op);
 	Info->CodeEnd += shellSize;
 }
 void AsmInject::Setup(AsmInfo* Info)
@@ -123,8 +126,9 @@ void  AsmInject::GetRegister(AsmInfo* Info, __int64* movValue, int Register) // 
 	memcpy((void*)temp, &movValue, 8);
 	VirtualProtect(EndMem, sizeof(absMov), op, &op);
 	Info->CodeEnd += sizeof(absMov);
-
 }
+
+// cmpAbsolute Dosent work  
 void  AsmInject::cmpAbsolute(AsmInfo* Info, __int64* movValue, int Register)
 {
 	__int8* Buffer = (__int8*)Info->BufferAddress;
@@ -208,6 +212,7 @@ void  AsmInject::cmpAbsolute(AsmInfo* Info, __int64* movValue, int Register)
 	Info->CodeEnd += sizeof(absCmp);
 	return;
 }
+
 void  AsmInject::jeShort(AsmInfo* Info, __int8 distance)
 {
 	__int8* Buffer = (__int8*)Info->BufferAddress;
@@ -225,6 +230,7 @@ void  AsmInject::jeShort(AsmInfo* Info, __int8 distance)
 	Info->CodeEnd += sizeof(jeShort);
 	return;
 }
+
 void  AsmInject::jneShort(AsmInfo* Info, __int8 distance)
 {
 	if (distance >= INT8_MAX || distance <= INT8_MIN)

@@ -13,7 +13,7 @@ public:
 	char fuckthisengine[0x24];
 	Vector3 Position;
 };
-class WeaponCros
+class WeaponC
 {
 public:
 	char fuckthisengine[0x354];
