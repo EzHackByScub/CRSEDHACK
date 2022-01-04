@@ -1,7 +1,5 @@
-﻿#define _CRT_SECURE_NO_WARNINGS
-
+#define _CRT_SECURE_NO_WARNINGS
 #include "AsmInject.h"
-
 #include <D3DX11.h>
 #include "imgui/imgui.h"
 #include "imgui/imgui_impl_dx11.h"
@@ -102,11 +100,10 @@ HRESULT present_hooked(IDXGISwapChain* swapchain, UINT sync, UINT flags)
     ImGui::SetWindowPos(ImVec2(0, 0), ImGuiCond_Always);
     ImGui::SetWindowSize(ImVec2(IO.DisplaySize.x, IO.DisplaySize.y), ImGuiCond_Always);
     ImGuiWindow& window = *ImGui::GetCurrentWindow();
-
     if (GetAsyncKeyState(VK_INSERT))
     {
         acount = 0;
-        for (size_t i = 0; i <= 200; i++)
+        for (size_t i = 0; i <= 300; i++)
         {
             crashresaon.pActor[i] = nullptr;
         }
@@ -183,7 +180,6 @@ __int64  CroshairAimBotHooked(WeaponC* a1, __int64 a2, double a3)
     a1->AimAngles.y = 0.f;
     return result;
 }
-
 typedef __int64(*oCamRotation)(__int64 a1, __int64 a2, Vector2* CamRotation, unsigned __int64 a4, __int64 a5, float a6, double a7, double a8, unsigned int a9, unsigned int a10);
 __int64 AimHookadr = Utils::GetAbsoluteAddress(Utils::sigscan(0, "E8 ? ? ? ? 48 C7 83 ? ? ? ? ? ? ? ? 66 C7 83"), 1, 5);
 __int64 AimbotHook(__int64 a1, __int64 a2,  Vector2* CamRotation, unsigned __int64 a4, __int64 a5, float a6, double a7, double a8, unsigned int a9, unsigned int a10)
@@ -225,7 +221,7 @@ bool PosHooked(__int64 a1, float a2, float xmm2_4_0, double a4, __int64 a5)
     ActorUpdateHook origFn = (ActorUpdateHook)(Poshookadr);
     __int64 v586 = *(__int64*)(a5);
     Actor* pActor = (Actor*) v586;
-    for (size_t i = 0; i <= 100; i++)
+    for (size_t i = 0; i <= 300; i++)
     {
         if (crashresaon.pActor[i] == pActor)
             break;
@@ -235,9 +231,13 @@ bool PosHooked(__int64 a1, float a2, float xmm2_4_0, double a4, __int64 a5)
             acount++;
             break;
         }
-        if (acount == 100)
+        if (acount == 300)
         {
             acount = 0;
+            for (size_t xx= 0; xx <= 300; xx++)
+            {
+                crashresaon.pActor[xx] = nullptr;
+            }
             break;
         }
     }
