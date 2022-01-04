@@ -12,6 +12,7 @@ pageDown -aimfov
 -x20 dmg 
 ## 
 Based on SteamOverlayHook.
+support windowed mode only.
 ## 
 Use face_injector_v2
 to inject
