@@ -1,8 +1,15 @@
-#Credit Steam-Hook-Render-PoC
+## 
+AimKey LALT
+Insert Clean ESP
+PageUo +aimfov
+pageDown -aimfov
+Cheats:
+-InfAmmo
+-NoRecoil
+-NoSpread
+-x20 dmg 
+Based on SteamOverlayHook.
 
-
-## Features
-aimbot
-esp
-norecoil if you standing
-inf ammo 
+Use face_injector_v2
+to inject
+ClassName DagorWClass 
