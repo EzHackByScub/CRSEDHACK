@@ -1,5 +1,6 @@
 # Cheats:
--InfAmmo
+-InfAmmo (probably detected)
+#
 -NoRecoil
 -NoSpread
 -x20 dmg 
